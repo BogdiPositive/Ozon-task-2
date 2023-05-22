@@ -5,39 +5,43 @@ const puppeteer = require("puppeteer");
     headless: false,
   });
   const page = await browser.newPage();
-  await page.goto(
-    "https://m.ok.ru/dk?st.cmd=friendStatuses&st.friendId=528551306763&_prevCmd=friendMain&tkn=1559"
-  );
+  await page.goto("https://ok.ru/");
   await page.setViewport({
-    width: 1200,
-    height: 800,
+    width: 1800,
+    height: 600,
   });
-  await page.click("input[name=loginButton]");
-  await page.waitForNavigation();
-  await page.type("#field_login", "+79013619094");
+  await page.type("#field_email", "+79013619094");
   await page.type("#field_password", "qwerty12345");
-  await page.click("input[name=button_login]");
+  await page.click("input.button-pro");
   await page.waitForNavigation();
+  await page.goto("https://ok.ru/profile/528551306763/statuses");
   await autoScroll(page);
-  const postLinks = await page.$$eval(".clnk", (links) =>
+  const postLinks = await page.$$eval(".media-text_a", (links) =>
     links.map((link) => link.href)
   );
+  const posts = [];
 
-  const postTexts = [];
   for (let i = 0; i < postLinks.length; i++) {
     await page.goto(postLinks[i]);
-    const element = await page.$(".topic-text_content");
+
+    const link = postLinks[i];
+    const parts = link.split("/");
+    const lastPart = parts[parts.length - 1];
+    const numericValue = parseInt(lastPart);
+    await page.waitForSelector(`div[data-tid="${numericValue}"]`);
+    const element = await page.$(`div[data-tid="${numericValue}"]`);
     if (element) {
-      const postText = await page.$eval(".topic-text_content", (el) =>
-        el.innerText.trim()
+      const postText = await page.$eval(
+        `div[data-tid="${numericValue}"]`,
+        (el) => el.innerText
       );
-      postTexts.push(postText);
+      posts.push(postText);
     } else {
       continue;
     }
   }
 
-  console.log(postTexts);
+  console.log(posts);
 
   await browser.close();
 })();
@@ -51,7 +55,9 @@ async function autoScroll(page) {
         var scrollHeight = document.body.scrollHeight;
         window.scrollBy(0, distance);
         totalHeight += distance;
-
+        if (document.querySelector("a.link-show-more")) {
+          document.querySelector("a.link-show-more").click();
+        }
         if (totalHeight >= scrollHeight - window.innerHeight) {
           clearInterval(timer);
           resolve();

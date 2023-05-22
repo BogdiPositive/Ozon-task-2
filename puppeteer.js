@@ -3,8 +3,7 @@ const puppeteer = require("puppeteer");
 async function getTextPosts(url) {
   const browser = await puppeteer.launch({
     headless: false,
-    timeout: 1000000
-    
+    timeout: 1000000,
   });
   const page = await browser.newPage();
   await page.goto("https://ok.ru/");
@@ -27,11 +26,11 @@ async function getTextPosts(url) {
         var scrollHeight = document.body.scrollHeight;
         window.scrollBy(0, distance);
         totalHeight += distance;
-         
+        if (document.querySelector("a.link-show-more")) {
+          document.querySelector("a.link-show-more").click();
+        }
+
         if (totalHeight >= scrollHeight - window.innerHeight) {
-          if (document.querySelector('a.link-show-more')) {
-            document.querySelector('a.link-show-more').click();
-          }
           clearInterval(timer);
           resolve();
         }
@@ -53,6 +52,7 @@ async function getTextPosts(url) {
 
 getTextPosts("https://ok.ru/profile/675038889/statuses")
   .then((posts) => {
+    console.log(posts.length);
     console.log(posts);
   })
   .catch((error) => {

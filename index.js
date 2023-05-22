@@ -14,7 +14,7 @@ const puppeteer = require("puppeteer");
   await page.type("#field_password", "qwerty12345");
   await page.click("input.button-pro");
   await page.waitForNavigation();
-  await page.goto("https://ok.ru/profile/528551306763/statuses");
+  await page.goto("https://ok.ru/profile/675038889/statuses");
   await autoScroll(page);
   const postLinks = await page.$$eval(".media-text_a", (links) =>
     links.map((link) => link.href)
@@ -28,20 +28,31 @@ const puppeteer = require("puppeteer");
     const parts = link.split("/");
     const lastPart = parts[parts.length - 1];
     const numericValue = parseInt(lastPart);
-    await page.waitForSelector(`div[data-tid="${numericValue}"]`);
-    const element = await page.$(`div[data-tid="${numericValue}"]`);
-    if (element) {
-      const postText = await page.$eval(
-        `div[data-tid="${numericValue}"]`,
-        (el) => el.innerText
-      );
-      posts.push(postText);
-    } else {
+    try {
+      await page.waitForSelector(`div[data-tid="${numericValue}"]`, {
+        timeout: 5000,
+      });
+      const element = await page.$(`div[data-tid="${numericValue}"]`);
+      if (element) {
+        const postText = await page.$eval(
+          `div[data-tid="${numericValue}"]`,
+          (el) => el.innerText
+        );
+        posts.push(postText);
+      } else {
+        console.log(
+          `Element with data-tid="${numericValue}" not found, skipping...`
+        );
+        continue;
+      }
+    } catch (error) {
+      console.error(`Error while waiting for selector: ${error.message}`);
       continue;
     }
   }
 
   console.log(posts);
+  console.log(posts.length);
 
   await browser.close();
 })();
